@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
   File? file;
   List<int> units=[];
   List<String> processedIds = [];
-
+  List<dynamic> excelRows=[];
   readExcelFile() async {
     if(file!=null){
       SmartDialog.showLoading(
@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
        Excel excel = Excel.decodeBytes(bytes);
        var myExcelFile = Excel.createExcel(); // automatically creates 1 empty sheet: Sheet1
        myExcelFile.rename('Sheet1', 'Worksheet');
-       List<dynamic> excelRows=[];
+
        Sheet sheetObject = myExcelFile['Worksheet'];
        sheetObject.setColWidth(0, 20);
        sheetObject.setColWidth(1, 20);
@@ -46,35 +46,30 @@ class _HomePageState extends State<HomePage> {
 
 
        for (int excelFilE=1;excelFilE<rowsList.length ; excelFilE++) {
-         String asin = rowsList[excelFilE][0]!.value;
-         if(!processedIds.contains(asin)){
-           int unitsdd=0;
 
-
-           for(int a=0;a<rowsList.length ; a++){
-             if(asin ==  rowsList[a][0]!.value){
-               unitsdd =  unitsdd + int.parse(rowsList[a][3]!.value.toString());
-               // if(excelFilE==a){
-               //   print('Matching ASIN-- >' + asin);
-               //
-               // }else{
-               //   print( '  -- Removed Index -- '+(a+1).toString());
-               //  // exceltoWrite.removeRow('Worksheet', a+1);
-               // }
-
+         if(rowsList[excelFilE][0]!=null && rowsList[excelFilE][0]!=''){
+           String asin=rowsList[excelFilE][0]!.value.toString();
+           if(!processedIds.contains(asin)){
+             print('Comparing Index Is  - >  >  >  '+ asin);
+             int unitsdd=0;
+             for(int a=0;a<rowsList.length ; a++){
+               if(rowsList[a][0]!=null && asin ==  rowsList[a][0]!.value.toString()){
+                 print('Being Compared  Is  - >  >  >  '+ asin + ' at -- > ' + a.toString() + ' -- > unit  '+rowsList[a][3]!.value.toString());
+                 unitsdd =  unitsdd + int.parse(rowsList[a][3]!.value.toString());
+                }
              }
+             excelRows.add(rowsList[excelFilE]);
+             units.add(unitsdd);
            }
-           excelRows.add(rowsList[excelFilE]);
-           units.add(unitsdd);
+           processedIds.add(asin);
+
          }
-         processedIds.add(asin);
-         print("Lenght of " + processedIds.length.toString());
        }
 
        for(int a=0;a<excelRows.length;a++){
          processedIds.clear();
-         String link =  'https://amazon.de/dp/'+excelRows[a][0].value;
-         String asin =  excelRows[a][0].value;
+         var link =  'https://amazon.de/dp/'+excelRows[a][0].value.toString();
+         var asin =  excelRows[a][0].value.toString();
          String itemDescription =  excelRows[a][2].value;
          //var units =  excelRows[a][3].value;
          var unitcost =  excelRows[a][4].value;
@@ -88,24 +83,35 @@ class _HomePageState extends State<HomePage> {
 
        }
 
+       units.clear();
+       excelRows.clear();
+
        var fileBytes = myExcelFile.save();
 
-       File('C:\\Users\\ashir.muhammad\\Pictures\\excelFile\\result.xlsx')
+       // File('C:\\Users\\ashir.muhammad\\Pictures\\excelFile\\result.xlsx')
+       //   ..createSync(recursive: true)
+       //   ..writeAsBytesSync(fileBytes!);
+
+       File(file!.path.toString())
          ..createSync(recursive: true)
          ..writeAsBytesSync(fileBytes!);
-
-
-        // File(file!.path.toString())
-        //  ..createSync(recursive: true)
-        //  ..writeAsBytesSync(fileBytes!);
+       await Future.delayed(Duration(seconds: 2));
+       SmartDialog.dismiss();
+       SmartDialog.showToast('Successfully Optimized');
 
 
      }catch(e){
        print(e);
+       await Future.delayed(Duration(seconds: 2));
+       SmartDialog.dismiss();
+       SmartDialog.showToast('Unable to Optimize - ERROR',);
+       units.clear();
+       excelRows.clear();
+       processedIds.clear();
+
      }
 
-      await Future.delayed(Duration(seconds: 2));
-      SmartDialog.dismiss();
+
     }
   }
 
